@@ -13,7 +13,7 @@ classes = { 0:'Real',
             }
 
 def image_processing(img):
-    model = load_model('./savedmodel/Knight.h5')
+    model = load_model('Knight.h5')
     data=[]
     image = Image.open(img)
     image = image.resize((100,100))
