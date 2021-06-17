@@ -2,7 +2,7 @@ from flask import *
 import os
 from werkzeug.utils import secure_filename
 import tensorflow as tf
-from tf.keras.models import load_model
+from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image
 
