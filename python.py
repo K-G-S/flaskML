@@ -51,5 +51,5 @@ def upload():
     return None
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=80,debug=True)
     model = load_model('Knight.h5')
+    app.run(host='0.0.0.0',port=80,debug=True)
