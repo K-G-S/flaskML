@@ -22,7 +22,6 @@ def load_labels(filename):
     return [line.strip() for line in f.readlines()]
 
 def image_processing(img):
-    model = load_model('Knight.h5')
     data=[]
     image = Image.open(img)
     image = image.resize((100,100))
@@ -46,10 +45,11 @@ def upload():
         result = image_processing(file_path)
         s = [str(i) for i in result]
         a = int("".join(s))
-        result = "The Meter Image is : " +classes[a]
+        result = classes[a]
         os.remove(file_path)
         return result
     return None
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=80,debug=True)
+    model = load_model('Knight.h5')
