@@ -10,8 +10,10 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image
+import requests
 
 app = Flask(__name__)
+g_model = None
 
 # Classes of meters
 classes = { 0:'Real',
@@ -22,12 +24,17 @@ def load_labels(filename):
     return [line.strip() for line in f.readlines()]
 
 def image_processing(img):
+    global g_model
+    if g_model is None:
+        g_model = load_model('Knight.h5')
+        print("model init")
     data=[]
     image = Image.open(img)
     image = image.resize((100,100))
     data.append(np.array(image))
     X_test=np.array(data)
-    Y_pred = model.predict_classes(X_test)
+    Y_pred = g_model.predict_classes(X_test)
+    print(Y_pred)
     return Y_pred
 
 @app.route('/')
@@ -48,8 +55,21 @@ def upload():
         result = classes[a]
         os.remove(file_path)
         return result
+    elif request.method == 'GET' and request.args.get('url', default=None):
+        url = request.args.get('url', default=None)
+        r = requests.get(url, allow_redirects=True)
+        filename = str(time.time()) + '.jpg'
+        print(filename)
+        open(filename, 'wb').write(r.content)
+        # Make prediction
+        result = image_processing(file_path)
+        s = [str(i) for i in result]
+        a = int("".join(s))
+        result = classes[a]
+        os.remove(file_path)
+        return result
     return None
 
 if __name__ == '__main__':
-    model = load_model('Knight.h5')
+    g_model = load_model('Knight.h5')
     app.run(host='0.0.0.0',port=80,debug=True)
