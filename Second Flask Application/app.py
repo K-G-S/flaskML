@@ -37,8 +37,8 @@ def home():
     global COUNT
     img = request.files['image']
 
-    img.save('static/{}.jpg'.format(COUNT))    
-    img_arr = cv2.imread('static/{}.jpg'.format(COUNT))
+    img.save('Saved Test Images/{}.jpg'.format(COUNT))    
+    img_arr = cv2.imread('Saved Test Images/{}.jpg'.format(COUNT))
 
     img_arr = cv2.resize(img_arr, (30,30))
     img_arr = img_arr / 255.0
@@ -55,7 +55,7 @@ def home():
 @app.route('/load_img')
 def load_img():
     global COUNT
-    return send_from_directory('static', "{}.jpg".format(COUNT-1))
+    return send_from_directory('Saved Test Images', "{}.jpg".format(COUNT-1))
 
 
 if __name__ == '__main__':
