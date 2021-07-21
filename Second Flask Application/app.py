@@ -7,6 +7,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, MaxPool2D, BatchNormalization, Flatten
 from PIL import Image
 import cv2
+import requests
+import time
 
 model = Sequential()
 model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -51,6 +53,48 @@ def home():
     preds = np.array([x,y,z])
     COUNT += 1
     return render_template('prediction.html', data=preds)
+
+
+@app.route('/predict', methods=['GET', 'POST'])
+def upload():
+    if request.method == 'POST':
+        img = request.files['image']
+
+        img.save('Saved Test Images/{}.jpg'.format(COUNT))    
+        img_arr = cv2.imread('Saved Test Images/{}.jpg'.format(COUNT))
+
+        img_arr = cv2.resize(img_arr, (30,30))
+        img_arr = img_arr / 255.0
+        img_arr = img_arr.reshape(1, 30,30,3)
+        prediction = model.predict(img_arr)
+
+        x = round(prediction[0,0], 2)
+        y = round(prediction[0,1], 2)
+        z = round(prediction[0,2], 2)
+        preds = np.array([x,y,z])
+        return {"real": float(preds[0]), "spoof": float(preds[1]), "nonmeter": float(preds[2])}
+    elif request.method == 'GET' and request.args.get('url', default=None):
+        url = request.args.get('url', default=None)
+        r = requests.get(url, allow_redirects=True)
+        filename = str(time.time()) + '.jpg'
+        file_path = "Saved Test Images/" + filename
+        print(file_path)
+        open(file_path, 'wb').write(r.content)
+        # Make prediction
+        img_arr = cv2.imread(file_path)
+
+        img_arr = cv2.resize(img_arr, (30,30))
+        img_arr = img_arr / 255.0
+        img_arr = img_arr.reshape(1, 30,30,3)
+        prediction = model.predict(img_arr)
+
+        x = round(prediction[0,0], 2)
+        y = round(prediction[0,1], 2)
+        z = round(prediction[0,2], 2)
+        preds = np.array([x,y,z])
+        os.remove(file_path)
+        return {"real": float(preds[0]), "spoof": float(preds[1]), "nonmeter": float(preds[2])}
+    return None
 
 
 @app.route('/load_img')
