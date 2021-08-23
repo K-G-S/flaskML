@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <link href="static/css/style.css" rel="stylesheet">
+    </head>
+    <body>
+        <center>
+            <div class='cont'>
+                
+            
+            {% if data[1]  > 0.50 %}
+            <h2>"THIS METER IMAGE IS SPOOF"</h2>
+
+            {% elif data[2]  > 0.50 %}
+            <h2>"THIS METER IMAGE IS NON METER"</h2>
+            
+            {%else%}
+            <h2>"THIS METER IMAGE IS REAL"</h2>
+            
+            {%endif%}
+
+        </div>
+            <h3>PROBABILITY SCORES :<br> REAL IMAGE: <span>{{data[0]}}</span> <br>SPOOF IMAGE: <span>{{data[1]}}</span><br>NON METER IMAGE: <span>{{data[2]}}</span><br> </h3>
+            
+            <img src="{{url_for('load_img')}}" alt='img'>
+            <br>
+            <br>
+            <a href="/" class='btn'>GO BACK</a>
+
+        </center>
+        
+    </body>
+</html>

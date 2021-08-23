@@ -1,44 +1,45 @@
-{% extends "base.html" %} {% block content %}
-
-<h2>Upload Meter Image</h2>
-<style> .footer {
-   position: fixed;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   background-color: #2dcba7;
-   color: black;
-   text-align: center;
-   font-size: 25px;
-   font-weight: bold;
-}</style>
-
-<div>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <form id="upload-file" method="post" enctype="multipart/form-data">
-        <label for="imageUpload" class="upload-label">
-            Upload...
-        </label>
-        <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg, .jfif">
-    </form>
-
-    <div class="image-section" style="display:none;">
-        <div class="img-preview">
-            <div id="imagePreview">
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <link href="static/css/style.css" rel="stylesheet">
+    </head>
+    <body>    
+        <center>
+            <div class='cont'>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <h2>WELCOME<br> TO METER CLASSIFICATION APPLICATION</h2>
             </div>
-        </div>
-        <div>
-            <button type="button" class="btn btn-primary btn-lg " id="btn-predict">Check</button>
-        </div>
-    </div>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            
 
-    <div class="loader" style="display:none;"></div>
-    
-    <p>The Meter Image is : </p>
-    <h3 id="result">
-        <span> </span>
-    </h3>
+        <form method="POST" action="{{url_for('home')}}" enctype="multipart/form-data">
+            <input type="file" name='image' class='btn'><br><br><br>
+            <input type="submit" class='btn'>
+        </form>
 
-</div>
+    </center>
 
-{% endblock %}
+    </body>
+</html>
