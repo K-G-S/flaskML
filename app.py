@@ -60,8 +60,33 @@ def image_processing(img):
     return Y_pred
 
 @app.route('/')
-def index():
+def man():
     return render_template('index.html')
+
+
+@app.route('/home', methods=['POST'])
+def home():
+    global COUNT
+    img = request.files['image']
+
+    img.save('Saved Test Images/{}.jpg'.format(COUNT))
+    img_arr = cv2.imread('Saved Test Images/{}.jpg'.format(COUNT))
+
+    img_arr = cv2.resize(img_arr, (30,30))
+    img_arr = img_arr / 255.0
+    img_arr = img_arr.reshape(1, 30,30,3)
+    prediction = model.predict(img_arr)
+
+    x = round(prediction[0,0], 2)
+    y = round(prediction[0,1], 2)
+    z = round(prediction[0,2], 2)
+    preds = np.array([x,y,z])
+    COUNT += 1
+    return render_template('prediction.html', data=preds)
+
+@app.route('/real-spoof')
+def index():
+    return render_template('real_spoof_index.html')
 
 @app.route('/predict', methods=['GET', 'POST'])
 def upload():
@@ -94,10 +119,10 @@ def upload():
     return None
 
 
-
-@app.route('/home', methods=['GET'])
-def home():
-    return render_template('main.html')
+#
+# @app.route('/home', methods=['GET'])
+# def home():
+#     return render_template('main.html')
 
 
 @app.route('/testimage', methods=['POST'])
@@ -136,4 +161,4 @@ def load_img():
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
-    app.run(host='0.0.0.0',port=80,debug=True)
+    app.run(debug=True)
