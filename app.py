@@ -5,6 +5,7 @@ import argparse
 import time
 from flask import *
 import os
+from shutil import copyfile
 from werkzeug.utils import secure_filename
 import tensorflow as tf
 from tensorflow.keras.models import load_model
@@ -16,6 +17,8 @@ from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, MaxPoo
 from PIL import Image
 import cv2
 import json
+import subprocess
+from pathlib import Path
 
 model = Sequential()
 model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -59,6 +62,41 @@ def image_processing(img):
     print(Y_pred)
     return Y_pred
 
+
+@app.route('/reading-value')
+def reading_value():
+    return render_template('reading_value_index.html')
+
+
+@app.route('/reading-value-display', methods=['POST'])
+def reading_value_display():
+    p = Path(__file__).parents[1]
+    roi_dir = str(p) + "/roi/yolov5"
+    digitrec_dir = str(p) + "/digitrec/yolov5"
+    flaskML_dir = str(p) + "/flaskML"
+    global COUNT
+    img = request.files['image']
+
+    img.save(os.path.join('SavedTestImages', "{}.jpg".format(COUNT)))
+    # changing directory to run the command
+    os.chdir(roi_dir)
+    # to get the image with meter reading location identified
+    p = subprocess.check_output(
+        ['python3', 'detect.py', '--save-crop', '--infile', os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(COUNT))],
+                         shell=False).splitlines()
+    # changing directory to run the command
+    os.chdir(digitrec_dir)
+    # to get the cropped image of meter reading and meter reading values
+    p = subprocess.check_output(['python3', 'detect.py', '--infile',
+                                 p[-4].decode("utf-8").split(": ")[1]],
+                                shell=False).splitlines()
+    # changing to original directory
+    os.chdir(flaskML_dir)
+    # copying the cropped meter reading image to this directory
+    copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(COUNT-1)))
+    return render_template('reading_value_display.html', data=p[-5].decode("utf-8").split(": ")[1])
+
+
 @app.route('/')
 def man():
     return render_template('index.html')
@@ -69,8 +107,8 @@ def home():
     global COUNT
     img = request.files['image']
 
-    img.save('Saved Test Images/{}.jpg'.format(COUNT))
-    img_arr = cv2.imread('Saved Test Images/{}.jpg'.format(COUNT))
+    img.save('SavedTestImages/{}.jpg'.format(COUNT))
+    img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(COUNT))
 
     img_arr = cv2.resize(img_arr, (30,30))
     img_arr = img_arr / 255.0
@@ -84,9 +122,11 @@ def home():
     COUNT += 1
     return render_template('prediction.html', data=preds)
 
+
 @app.route('/real-spoof')
 def index():
     return render_template('real_spoof_index.html')
+
 
 @app.route('/predict', methods=['GET', 'POST'])
 def upload():
@@ -119,20 +159,14 @@ def upload():
     return None
 
 
-#
-# @app.route('/home', methods=['GET'])
-# def home():
-#     return render_template('main.html')
-
-
 @app.route('/testimage', methods=['POST'])
 def testimage():
     
     if request.method == 'POST':
         global COUNT
         img = request.files['file']
-        img.save('Saved Test Images/{}.jpg'.format(COUNT))    
-        img_arr = cv2.imread('Saved Test Images/{}.jpg'.format(COUNT))
+        img.save('SavedTestImages/{}.jpg'.format(COUNT))
+        img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(COUNT))
 
         img_arr = cv2.resize(img_arr, (30,30))
         img_arr = img_arr / 255.0
@@ -154,10 +188,17 @@ def testimage():
      #       return 'Meter Image is Real'
     #return None
 
+
+@app.route('/load_crop_img')
+def load_crop_img():
+    global COUNT
+    return send_from_directory('SavedTestImages', "{}.jpg".format(COUNT-1))
+
+
 @app.route('/load_img')
 def load_img():
     global COUNT
-    return send_from_directory('Saved Test Images', "{}.jpg".format(COUNT-1))
+    return send_from_directory('SavedTestImages', "{}.jpg".format(COUNT-1))
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
