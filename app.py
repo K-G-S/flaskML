@@ -6,6 +6,7 @@ import time
 from flask import *
 import os
 from shutil import copyfile
+import pandas as pd
 from werkzeug.utils import secure_filename
 import tensorflow as tf
 from tensorflow.keras.models import load_model
@@ -87,14 +88,34 @@ def reading_value_display():
     # changing directory to run the command
     os.chdir(digitrec_dir)
     # to get the cropped image of meter reading and meter reading values
-    p = subprocess.check_output(['python3', 'detect.py', '--infile',
+    p = subprocess.check_output(['python3', 'detect.py', '--save-txt','--infile',
                                  p[-4].decode("utf-8").split(": ")[1]],
                                 shell=False).splitlines()
     # changing to original directory
     os.chdir(flaskML_dir)
     # copying the cropped meter reading image to this directory
     copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(COUNT-1)))
-    return render_template('reading_value_display.html', data=p[-5].decode("utf-8").split(": ")[1])
+    copyfile(p[-3].decode("utf-8"), os.path.join('SavedTestImages', "{}.txt".format(COUNT - 1)))
+    with open(os.path.join('SavedTestImages', "{}.txt".format(COUNT - 1))) as f:
+        content = f.readlines()
+        content = [item.replace(" ", ",") for item in content]
+        content = [item.replace("\n", "") for item in content]
+        dataframe = pd.DataFrame(content)
+        headerlist = ['a']
+        dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(COUNT - 1)), header=headerlist, index=False)
+        df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(COUNT - 1)))
+        final_df = df.a.str.split(",",expand=True)
+        final_df = final_df.sort_values(by=[1], ascending=True)
+        prediction = final_df[0]
+        # strings = prediction
+        new_strings = []
+        for string in prediction:
+            new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf")
+            new_strings.append(new_string)
+        # new_strings.append(new_strings.pop(new_strings.index('kwh')))
+        # print(new_strings)
+
+    return render_template('reading_value_display.html', data=' '.join(new_strings))
 
 
 @app.route('/')
