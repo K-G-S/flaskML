@@ -20,6 +20,8 @@ import cv2
 import json
 import subprocess
 from pathlib import Path
+import random
+import string
 
 model = Sequential()
 model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -64,6 +66,10 @@ def image_processing(img):
     return Y_pred
 
 
+def get_random_string(N=15):
+    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
+
+
 @app.route('/reading-value')
 def reading_value():
     return render_template('reading_value_index.html')
@@ -75,15 +81,15 @@ def reading_value_display():
     roi_dir = str(p) + "/roi/yolov5"
     digitrec_dir = str(p) + "/digitrec/yolov5"
     flaskML_dir = str(p) + "/flaskML"
-    global COUNT
+    filename = get_random_string()
     img = request.files['image']
 
-    img.save(os.path.join('SavedTestImages', "{}.jpg".format(COUNT)))
+    img.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
     # changing directory to run the command
     os.chdir(roi_dir)
     # to get the image with meter reading location identified
     p = subprocess.check_output(
-        ['python3', 'detect.py', '--save-crop', '--infile', os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(COUNT))],
+        ['python3', 'detect.py', '--save-crop', '--infile', os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename))],
                          shell=False).splitlines()
     # changing directory to run the command
     os.chdir(digitrec_dir)
@@ -94,16 +100,17 @@ def reading_value_display():
     # changing to original directory
     os.chdir(flaskML_dir)
     # copying the cropped meter reading image to this directory
-    copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(COUNT-1)))
-    copyfile(p[-3].decode("utf-8"), os.path.join('SavedTestImages', "{}.txt".format(COUNT - 1)))
-    with open(os.path.join('SavedTestImages', "{}.txt".format(COUNT - 1))) as f:
+    cropped_filename = filename + "_crop"
+    copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(cropped_filename)))
+    copyfile(p[-3].decode("utf-8"), os.path.join('SavedTestImages', "{}.txt".format(cropped_filename)))
+    with open(os.path.join('SavedTestImages', "{}.txt".format(cropped_filename))) as f:
         content = f.readlines()
         content = [item.replace(" ", ",") for item in content]
         content = [item.replace("\n", "") for item in content]
         dataframe = pd.DataFrame(content)
         headerlist = ['a']
-        dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(COUNT - 1)), header=headerlist, index=False)
-        df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(COUNT - 1)))
+        dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
+        df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
         final_df = df.a.str.split(",",expand=True)
         final_df = final_df.sort_values(by=[1], ascending=True)
         prediction = final_df[0]
@@ -115,7 +122,7 @@ def reading_value_display():
         # new_strings.append(new_strings.pop(new_strings.index('kwh')))
         # print(new_strings)
 
-    return render_template('reading_value_display.html', data=' '.join(new_strings))
+    return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
 
 
 @app.route('/')
@@ -125,11 +132,11 @@ def man():
 
 @app.route('/home', methods=['POST'])
 def home():
-    global COUNT
+    filename = get_random_string()
     img = request.files['image']
 
-    img.save('SavedTestImages/{}.jpg'.format(COUNT))
-    img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(COUNT))
+    img.save('SavedTestImages/{}.jpg'.format(filename))
+    img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
 
     img_arr = cv2.resize(img_arr, (30,30))
     img_arr = img_arr / 255.0
@@ -140,8 +147,8 @@ def home():
     y = round(prediction[0,1], 2)
     z = round(prediction[0,2], 2)
     preds = np.array([x,y,z])
-    COUNT += 1
-    return render_template('prediction.html', data=preds)
+    # COUNT += 1
+    return render_template('prediction.html', data=preds, fname=filename+".jpg")
 
 
 @app.route('/real-spoof')
@@ -184,10 +191,11 @@ def upload():
 def testimage():
     
     if request.method == 'POST':
-        global COUNT
+        # global COUNT
+        filename = get_random_string()
         img = request.files['file']
-        img.save('SavedTestImages/{}.jpg'.format(COUNT))
-        img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(COUNT))
+        img.save('SavedTestImages/{}.jpg'.format(filename))
+        img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
 
         img_arr = cv2.resize(img_arr, (30,30))
         img_arr = img_arr / 255.0
@@ -198,7 +206,7 @@ def testimage():
         y = round(prediction[0,1], 2)
         z = round(prediction[0,2], 2)
         preds = np.array([x,y,z])
-        COUNT += 1
+        # COUNT += 1
         return {"real": float(preds[0]), "spoof": float(preds[1]), "nonmeter": float(preds[2])}
 
 #        if preds[1] > 0.50:
@@ -210,16 +218,18 @@ def testimage():
     #return None
 
 
-@app.route('/load_crop_img')
-def load_crop_img():
+@app.route('/load_crop_img/<fname>')
+def load_crop_img(fname):
     global COUNT
-    return send_from_directory('SavedTestImages', "{}.jpg".format(COUNT-1))
+    return send_from_directory('SavedTestImages', "{}".format(fname))
 
 
-@app.route('/load_img')
-def load_img():
+@app.route('/load_img/<fname>')
+def load_img(fname):
     global COUNT
-    return send_from_directory('SavedTestImages', "{}.jpg".format(COUNT-1))
+    print(fname)
+    print('SavedTestImages', "{}".format(fname))
+    return send_from_directory('SavedTestImages', "{}".format(fname))
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')

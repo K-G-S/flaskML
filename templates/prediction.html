@@ -24,7 +24,7 @@
         </div>
             <h3>PROBABILITY SCORES :<br> REAL IMAGE: <span>{{data[0]}}</span> <br>SPOOF IMAGE: <span>{{data[1]}}</span><br>NON METER IMAGE: <span>{{data[2]}}</span><br> </h3>
             
-            <img src="{{url_for('load_img')}}" alt='img'>
+            <img src="{{url_for('load_img', fname=fname)}}" alt='img'>
             <br>
             <br>
             <a href="/" class='btn'>GO BACK</a>
