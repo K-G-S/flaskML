@@ -22,6 +22,11 @@ import subprocess
 from pathlib import Path
 import random
 import string
+from yolov5.detect import run
+from yolov5.load_models import load_roi_model, load_digitrec_model
+
+roi_values = load_roi_model()
+digit_rec_values = load_digitrec_model()
 
 model = Sequential()
 model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -85,44 +90,91 @@ def reading_value_display():
     img = request.files['image']
 
     img.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
-    # changing directory to run the command
-    os.chdir(roi_dir)
-    # to get the image with meter reading location identified
-    p = subprocess.check_output(
-        ['python3', 'detect.py', '--save-crop', '--infile', os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename))],
-                         shell=False).splitlines()
-    # changing directory to run the command
-    os.chdir(digitrec_dir)
-    # to get the cropped image of meter reading and meter reading values
-    p = subprocess.check_output(['python3', 'detect.py', '--save-txt','--infile',
-                                 p[-4].decode("utf-8").split(": ")[1]],
-                                shell=False).splitlines()
-    # changing to original directory
-    os.chdir(flaskML_dir)
-    # copying the cropped meter reading image to this directory
+    # one way start
+    first_model_img_path, first_text_path = run(classify=roi_values[0], pt=roi_values[1], onnx=roi_values[2],
+                                                stride=roi_values[3], names=roi_values[4], model=roi_values[5],
+                                                modelc=roi_values[6], session=roi_values[7], device=roi_values[8],
+                                                save_crop=True,
+                                                infile=os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename)))
+    print(first_model_img_path, first_text_path, "firstoutput")
+    img_path, text_path = run(classify=digit_rec_values[0], pt=digit_rec_values[1], onnx=digit_rec_values[2],
+                              stride=digit_rec_values[3], names=digit_rec_values[4], model=digit_rec_values[5],
+                              modelc=digit_rec_values[6], session=digit_rec_values[7], device=roi_values[8],
+                              save_txt=True, infile=first_model_img_path)
+    print(img_path, text_path)
     cropped_filename = filename + "_crop"
-    copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(cropped_filename)))
-    copyfile(p[-3].decode("utf-8"), os.path.join('SavedTestImages', "{}.txt".format(cropped_filename)))
-    with open(os.path.join('SavedTestImages', "{}.txt".format(cropped_filename))) as f:
-        content = f.readlines()
-        content = [item.replace(" ", ",") for item in content]
-        content = [item.replace("\n", "") for item in content]
-        dataframe = pd.DataFrame(content)
-        headerlist = ['a']
-        dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
-        df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
-        final_df = df.a.str.split(",",expand=True)
-        final_df = final_df.sort_values(by=[1], ascending=True)
-        prediction = final_df[0]
-        # strings = prediction
-        new_strings = []
-        for string in prediction:
-            new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf")
-            new_strings.append(new_string)
-        # new_strings.append(new_strings.pop(new_strings.index('kwh')))
-        # print(new_strings)
+    new_strings = []
+    if os.path.isfile(img_path):
+        copyfile(img_path, os.path.join('SavedTestImages', "{}.jpg".format(cropped_filename)))
+    if os.path.isfile(text_path):
+        copyfile(text_path, os.path.join('SavedTestImages', "{}.txt".format(cropped_filename)))
+        with open(os.path.join('SavedTestImages', "{}.txt".format(cropped_filename))) as f:
+            content = f.readlines()
+            content = [item.replace(" ", ",") for item in content]
+            content = [item.replace("\n", "") for item in content]
+            dataframe = pd.DataFrame(content)
+            headerlist = ['a']
+            dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
+            df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
+            final_df = df.a.str.split(",",expand=True)
+            final_df = final_df.sort_values(by=[1], ascending=True)
+            prediction = final_df[0]
+            # strings = prediction
+            for string in prediction:
+                new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf")
+                new_strings.append(new_string)
+            # new_strings.append(new_strings.pop(new_strings.index('kwh')))
+            # print(new_strings)
+    if request.args.get('isJson', None):
+        value = ''.join(new_strings)
+        parameter = ''
+        if new_strings[-1] in ["kw", "kwh", "kvah", "kva", "pf"]:
+            parameter = new_strings[-1]
+            value = ''.join(new_strings[:-1])
+        return {"value": value, "parameter": parameter}
+    else:
+        return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
 
-    return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
+
+    # # second way start
+    # # changing directory to run the command
+    # os.chdir(roi_dir)
+    # # to get the image with meter reading location identified
+    # p = subprocess.check_output(
+    #     ['python3', 'detect.py', '--save-crop', '--infile', os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename))],
+    #                      shell=False).splitlines()
+    # # changing directory to run the command
+    # os.chdir(digitrec_dir)
+    # # to get the cropped image of meter reading and meter reading values
+    # p = subprocess.check_output(['python3', 'detect.py', '--save-txt','--infile',
+    #                              p[-4].decode("utf-8").split(": ")[1]],
+    #                             shell=False).splitlines()
+    # # changing to original directory
+    # os.chdir(flaskML_dir)
+    # # copying the cropped meter reading image to this directory
+    # cropped_filename = filename + "_crop"
+    # copyfile(p[-1].decode("utf-8"), os.path.join('SavedTestImages', "{}.jpg".format(cropped_filename)))
+    # copyfile(p[-3].decode("utf-8"), os.path.join('SavedTestImages', "{}.txt".format(cropped_filename)))
+    # with open(os.path.join('SavedTestImages', "{}.txt".format(cropped_filename))) as f:
+    #     content = f.readlines()
+    #     content = [item.replace(" ", ",") for item in content]
+    #     content = [item.replace("\n", "") for item in content]
+    #     dataframe = pd.DataFrame(content)
+    #     headerlist = ['a']
+    #     dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
+    #     df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
+    #     final_df = df.a.str.split(",",expand=True)
+    #     final_df = final_df.sort_values(by=[1], ascending=True)
+    #     prediction = final_df[0]
+    #     # strings = prediction
+    #     new_strings = []
+    #     for string in prediction:
+    #         new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf")
+    #         new_strings.append(new_string)
+    #     # new_strings.append(new_strings.pop(new_strings.index('kwh')))
+    #     # print(new_strings)
+    #
+    # return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
 
 
 @app.route('/')
@@ -233,4 +285,4 @@ def load_img(fname):
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
-    app.run(debug=True)
+    app.run(host='0.0.0.0',port=80,debug=True)
