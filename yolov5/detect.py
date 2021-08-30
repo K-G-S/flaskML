@@ -32,7 +32,7 @@ def run(classify, pt, onnx, stride, names, model, modelc, session, device,
         weights='last.pt',  # model.pt path(s)
         source='data/images',  # file/dir/URL/glob, 0 for webcam
         imgsz=640,  # inference size (pixels)
-        conf_thres=0.25,  # confidence threshold
+        conf_thres=0.6,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
         # device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
