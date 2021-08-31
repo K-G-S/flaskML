@@ -82,10 +82,10 @@ def reading_value():
 
 @app.route('/reading-value-display', methods=['POST'])
 def reading_value_display():
-    p = Path(__file__).parents[1]
-    roi_dir = str(p) + "/roi/yolov5"
-    digitrec_dir = str(p) + "/digitrec/yolov5"
-    flaskML_dir = str(p) + "/flaskML"
+    p = Path().resolve() # Path(__file__).parents[1]
+    # roi_dir = str(p) + "/roi/yolov5"
+    # digitrec_dir = str(p) + "/digitrec/yolov5"
+    flaskML_dir = str(p) # + "/flaskML"
     filename = get_random_string()
     img = request.files['image']
 
