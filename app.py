@@ -125,15 +125,26 @@ def reading_value_display():
                 new_strings.append(new_string)
             # new_strings.append(new_strings.pop(new_strings.index('kwh')))
             # print(new_strings)
+    
+    # value = ''.join(new_strings)
+    # parameter = ''
+
+    params = []
+    value = ""
+    for st in new_strings:
+        if st in ["kw", "kwh", "kvah", "kva", "pf"]:
+            params.append(st)
+        else:
+            value = value + st
+    parameter = '/'.join(params)
+
+    # if new_strings[-1] in ["kw", "kwh", "kvah", "kva", "pf"]:
+    #     parameter = new_strings[-1]
+    #     value = ''.join(new_strings[:-1])
     if request.args.get('isJson', None):
-        value = ''.join(new_strings)
-        parameter = ''
-        if new_strings[-1] in ["kw", "kwh", "kvah", "kva", "pf"]:
-            parameter = new_strings[-1]
-            value = ''.join(new_strings[:-1])
         return {"value": value, "parameter": parameter}
     else:
-        return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
+        return render_template('reading_value_display.html', data=value+" "+parameter, fname=filename+"_crop.jpg")
 
 
     # # second way start
