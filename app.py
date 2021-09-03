@@ -96,12 +96,12 @@ def reading_value_display():
                                                 modelc=roi_values[6], session=roi_values[7], device=roi_values[8],
                                                 save_crop=True,
                                                 infile=os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename)))
-    print(first_model_img_path, first_text_path, "firstoutput")
+
     img_path, text_path = run(classify=digit_rec_values[0], pt=digit_rec_values[1], onnx=digit_rec_values[2],
                               stride=digit_rec_values[3], names=digit_rec_values[4], model=digit_rec_values[5],
                               modelc=digit_rec_values[6], session=digit_rec_values[7], device=roi_values[8],
-                              save_txt=True, infile=first_model_img_path)
-    print(img_path, text_path)
+                              save_txt=True, save_conf=True, infile=first_model_img_path)
+
     cropped_filename = filename + "_crop"
     new_strings = []
     if os.path.isfile(img_path):
@@ -117,6 +117,20 @@ def reading_value_display():
             dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
             df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
             final_df = df.a.str.split(",",expand=True)
+            current_max_prob_val = ''
+            current_row = ''
+            for index, row in final_df.iterrows():
+                print(row)
+                if int(row[0]) > 10:
+                    print("hi", int(row[0]) > 10)
+                    if current_max_prob_val:
+                        if float(current_max_prob_val) < float(row[5]):
+                            final_df = final_df.drop(labels=int(current_row), axis=0)
+                            current_max_prob_val = row[5]
+                            current_row = index
+                    else:
+                        current_max_prob_val = row[5]
+                        current_row = index
             final_df = final_df.sort_values(by=[1], ascending=True)
             prediction = final_df[0]
             # strings = prediction
@@ -296,4 +310,4 @@ def load_img(fname):
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
-    app.run(host='0.0.0.0',port=80,debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
