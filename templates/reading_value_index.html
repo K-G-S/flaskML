@@ -35,7 +35,9 @@
 
 
         <form method="POST" action="{{url_for('reading_value_display')}}" enctype="multipart/form-data">
-            <input type="file" name='image' class='btn'><br><br><br>
+            <input type="radio" id="best" name='mtype' class='btn' value="best" checked><label for="best">Best</label> 
+            <input type="radio" id="light" name='mtype' class='btn' value="light"><label for="light">Light</label>  <br><br><br>
+            <input type="file" name='image' class='btn' required><br><br><br>
             <input type="submit" class='btn'>
         </form>
 

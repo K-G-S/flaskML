@@ -7,7 +7,7 @@ from utils.torch_utils import load_classifier, select_device
 
 p = Path(__file__).parents[1]
 
-def load_roi_model(weights=os.path.join(str(p), "yolov5/models_last/last-roi.pt"), device='', half=False):
+def load_roi_model(weights="yolov5/models_last/last-roi.pt", device='', half=False):
     # Load model
     model = None
     modelc = None
@@ -33,7 +33,7 @@ def load_roi_model(weights=os.path.join(str(p), "yolov5/models_last/last-roi.pt"
     return classify, pt, onnx, stride, names, model, modelc, session, device
 
 
-def load_digitrec_model(weights=os.path.join(str(p), "yolov5/models_last/last-digitrec.pt"), device='', half=False):
+def load_digitrec_model(weights="yolov5/models_last/last-digitrec.pt", device='', half=False):
     # Load model
     model = None
     modelc = None

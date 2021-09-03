@@ -25,8 +25,11 @@ import string
 from yolov5.detect import run
 from yolov5.load_models import load_roi_model, load_digitrec_model
 
-roi_values = load_roi_model()
-digit_rec_values = load_digitrec_model()
+roi_values_best = load_roi_model()
+digit_rec_values_best = load_digitrec_model()
+
+roi_values_light = load_roi_model(weights="yolov5/models_last/slast-roi.pt")
+digit_rec_values_light = load_digitrec_model(weights="yolov5/models_last/slast-digitrec.pt")
 
 model = Sequential()
 model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -88,6 +91,17 @@ def reading_value_display():
     flaskML_dir = str(p) # + "/flaskML"
     filename = get_random_string()
     img = request.files['image']
+    # print(request.form)
+    mtype = "best"
+    if request.form != None and request.form.get('mtype') in ["light", "best"]:
+        mtype = request.form.get('mtype')
+
+    if mtype == "light":
+        roi_values = roi_values_light
+        digit_rec_values = digit_rec_values_light
+    else:
+        roi_values = roi_values_best
+        digit_rec_values = digit_rec_values_best
 
     img.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
     # one way start
@@ -158,7 +172,7 @@ def reading_value_display():
     if request.args.get('isJson', None):
         return {"value": value, "parameter": parameter}
     else:
-        return render_template('reading_value_display.html', data=value+" "+parameter, fname=filename+"_crop.jpg")
+        return render_template('reading_value_display.html', data=value+" "+parameter, mtype=mtype, fname=filename+"_crop.jpg")
 
 
     # # second way start
