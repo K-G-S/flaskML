@@ -4,8 +4,37 @@
         <title></title>
         <meta charset="UTF-8">
         <link href="static/css/style.css" rel="stylesheet">
+        <script>
+            function clearForm() {
+                document.getElementById('upload').checked = true;
+                document.getElementById('url').checked = false;
+                document.getElementById('image').style.visibility = 'visible';
+                document.getElementById('imageurl').style.visibility = 'hidden';
+                document.getElementById("filefield").required = true;
+                document.getElementById("urlfield").required = false;
+                document.getElementById("filefield").value = "";
+                document.getElementById("urlfield").value = "";
+
+            }
+            function fileUrlCheck() {
+                if (document.getElementById('upload').checked) {
+                    document.getElementById('image').style.visibility = 'visible';
+                    document.getElementById('imageurl').style.visibility = 'hidden';
+                    document.getElementById("filefield").required = true;
+                    document.getElementById("urlfield").required = false;
+
+                }
+                else if (document.getElementById('url').checked) {
+                    document.getElementById('image').style.visibility = 'hidden';
+                    document.getElementById('imageurl').style.visibility = 'visible';
+                    document.getElementById("filefield").required = false;
+                    document.getElementById("urlfield").required = true;
+                }
+
+            }
+        </script>
     </head>
-    <body>
+    <body onload="clearForm()">
         <center>
             <div class='cont'>
                 <br>
@@ -34,10 +63,17 @@
             <br>
 
 
-        <form method="POST" action="{{url_for('reading_value_display')}}" enctype="multipart/form-data">
+        <form id="myForm" method="POST" action="{{url_for('reading_value_display')}}" enctype="multipart/form-data">
             <input type="radio" id="best" name='mtype' class='btn' value="best" checked><label for="best">Best</label> 
             <input type="radio" id="light" name='mtype' class='btn' value="light"><label for="light">Light</label>  <br><br><br>
-            <input type="file" name='image' class='btn' required><br><br><br>
+            <input type="radio" id="upload" name='stype' class='btn' value="upload" autocomplete="off" onclick="fileUrlCheck()"><label for="upload">Upload</label>
+            <input type="radio" id="url" name='stype' class='btn' value="url" autocomplete="off" onclick="fileUrlCheck()" ><label for="url">Url</label>  <br><br><br>
+            <div id="image" style="visibility:hidden">
+                <input type="file" name='image' class='btn' id="filefield" required>
+            </div>
+            <div id="imageurl" style="visibility:hidden">
+                <label for="url">Image Url: </label><input style="width: 500px;height: 25px;" type="text" name='url' class='form-control' id="urlfield" autocomplete="off">
+            </div><br><br><br>
             <input type="submit" class='btn'>
         </form>
 
