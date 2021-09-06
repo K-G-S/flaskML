@@ -55,6 +55,7 @@ def run(classify, pt, onnx, stride, names, model, modelc, session, device,
         half=False,  # use FP16 half-precision inference
         infile=None
         ):
+    c = None
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -213,7 +214,7 @@ def run(classify, pt, onnx, stride, names, model, modelc, session, device,
     if s:
         return os.path.abspath(save_path), os.path.abspath(txt_path + '.txt')
     else:
-        return os.path.abspath(save_dir / 'crops' / names[c] / f'{p.stem}.jpg'), None
+        return os.path.abspath(save_dir / 'crops' / names[c] / f'{p.stem}.jpg') if c or c==0 else os.path.abspath(save_path), None
 
 
 def parse_opt():
