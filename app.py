@@ -49,6 +49,7 @@ model.load_weights('static/model.h5')
 COUNT = 0
 app = Flask(__name__)
 g_model = None
+f_model = None
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1
 
 # Classes of meters
@@ -318,6 +319,34 @@ def testimage():
      #       return 'Meter Image is Real'
     #return None
 
+@app.route('/clear-blur')
+def clearblur():
+    return render_template('clear_blur_index.html')
+
+
+@app.route('/clear-blur-predection', methods=['POST'])
+def clear_blur_predection():
+    filename = get_random_string()
+    img = request.files['image']
+
+    img.save('SavedTestImages/{}.jpg'.format(filename))
+    img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
+
+    img_arr = cv2.resize(img_arr, (100,100))
+    img_arr = img_arr / 255.0
+    img_arr = img_arr.reshape(1, 100,100,3)
+    prediction = f_model.predict(img_arr)
+
+    x = round(prediction[0,0], 2)
+    y = round(prediction[0,1], 2)
+    preds = np.array([x,y])
+    return render_template('clear_blur_prediction.html', data=preds, fname=filename+".jpg")
+
+
+@app.route('/load_clear_blur_img')
+def load_clear_blur_img(fname):
+    global COUNT
+    return send_from_directory('Saved Test Images', "{}.jpg".format(fname))
 
 @app.route('/load_crop_img/<fname>')
 def load_crop_img(fname):
@@ -334,4 +363,5 @@ def load_img(fname):
 
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
+    f_model = load_model('static/92acc33loss.h5')
     app.run(host='0.0.0.0', port=80, debug=True)
