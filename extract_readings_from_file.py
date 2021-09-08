@@ -15,11 +15,11 @@ def getReadingValues(filename):
 
         # write the header
         writer.writerow(header)
-        no = 1;
+        no = 1
         for img_url in data.url:
             print(img_url, no)
             img_url = str(img_url)
-            url = 'http://127.0.0.1:5000/reading-value-display?isJson=true'
+            url = 'http://127.0.0.1:80/reading-value-display?isJson=true'
             headers = {'content-type': 'application/x-www-form-urlencoded'}
             data_best = {"url": img_url, "stype": "url", "mtype": "best"}
             # params = {'sessionKey': '9ebbd0b25760557393a43064a92bae539d962103', 'format': 'xml', 'platformId': 1}
