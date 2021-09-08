@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <link href="static/css/clearblurstyle.css" rel="stylesheet">
+    </head>
+    <body>
+        <center>
+            <div class='cont'>
+                
+            
+            {% if data[1]  > 0.50 %}
+            <h2>"GIVEN IMAGE IS A CLEAR IMAGE"</h2>
+            
+            {%else%}
+            <h2>"IMAGE IS BLUR PLEASE CLICK A CLEAR IMAGE"</h2>
+            
+            {%endif%}
+
+        </div>
+            <h3>PROBABILITY SCORES :<br> BLUR IMAGE: <span>{{data[0]}}</span> <br>GOOD IMAGE: <span>{{data[1]}}</span><br> </h3>
+            
+            <img src="{{url_for('load_img', fname=fname)}}" alt='img'>
+            <br>
+            <br>
+            <a href="/clear-blur" class='btn'>GO BACK</a>
+
+        </center>
+        
+    </body>
+</html>
