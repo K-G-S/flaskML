@@ -364,4 +364,4 @@ def load_img(fname):
 if __name__ == '__main__':
     g_model = load_model('static/Knight.h5')
     f_model = load_model('static/92acc33loss.h5')
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=False)
