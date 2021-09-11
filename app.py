@@ -90,7 +90,7 @@ def reading_value_display():
     # roi_dir = str(p) + "/roi/yolov5"
     # digitrec_dir = str(p) + "/digitrec/yolov5"
     flaskML_dir = str(p) # + "/flaskML"
-    filename = get_random_string()
+    filename = None
     # print(request.form)
     mtype = "best"
     stype = "upload"
@@ -108,12 +108,16 @@ def reading_value_display():
         stype = request.form.get('stype')
 
     if stype == "upload":
+        filename = get_random_string()
         img = request.files['image']
         img.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
     else:
-        img_data = requests.get(request.form.get('url')).content
-        with open(os.path.join('SavedTestImages', "{}.jpg".format(filename)), 'wb') as handler:
-            handler.write(img_data)
+        filename = request.form.get('url').split('/')[-1]
+        filename = filename.replace(".jpg", "")
+        if not os.path.exists(os.path.join('SavedTestImages', "{}.jpg".format(filename))):
+            img_data = requests.get(request.form.get('url')).content
+            with open(os.path.join('SavedTestImages', "{}.jpg".format(filename)), 'wb') as handler:
+                handler.write(img_data)
 
     # one way start
     first_model_img_path, first_text_path = run(classify=roi_values[0], pt=roi_values[1], onnx=roi_values[2],
