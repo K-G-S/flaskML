@@ -75,6 +75,26 @@ def image_processing(img):
     return Y_pred
 
 
+def save_image(img_data, url=None):
+    print(img_data, url)
+    filename = None
+    if img_data is not None and img_data.filename != '':
+        filename = get_random_string()
+        img_data.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
+    elif url is not None:
+        filename = download_image(url)
+    return filename
+
+
+def download_image(url):
+    filename = url.split('/')[-1]
+    filename = filename.replace(".jpg", "")
+    if not os.path.exists(os.path.join('SavedTestImages', "{}.jpg".format(filename))):
+        img_data = requests.get(url).content
+        with open(os.path.join('SavedTestImages', "{}.jpg".format(filename)), 'wb') as handler:
+            handler.write(img_data)
+    return filename
+
 def get_random_string(N=15):
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
@@ -107,17 +127,13 @@ def reading_value_display():
     if request.form != None and request.form.get('stype') in ["upload", "url"]:
         stype = request.form.get('stype')
 
-    if stype == "upload":
-        filename = get_random_string()
-        img = request.files['image']
-        img.save(os.path.join('SavedTestImages', "{}.jpg".format(filename)))
-    else:
-        filename = request.form.get('url').split('/')[-1]
-        filename = filename.replace(".jpg", "")
-        if not os.path.exists(os.path.join('SavedTestImages', "{}.jpg".format(filename))):
-            img_data = requests.get(request.form.get('url')).content
-            with open(os.path.join('SavedTestImages', "{}.jpg".format(filename)), 'wb') as handler:
-                handler.write(img_data)
+    img_url = None
+    img_data = None
+    if request.form and request.form.get('url'):
+        img_url = request.form.get('url')
+    if request.files and 'image' in request.files:
+        img_data = request.files['image']
+    filename = save_image(img_data, img_url)
 
     # one way start
     first_model_img_path, first_text_path = run(classify=roi_values[0], pt=roi_values[1], onnx=roi_values[2],
@@ -293,14 +309,20 @@ def upload():
     return None
 
 
-@app.route('/testimage', methods=['POST'])
-def testimage():
+@app.route('/classify-image', methods=['POST'])
+def classify_image():
     
     if request.method == 'POST':
         # global COUNT
-        filename = get_random_string()
-        img = request.files['file']
-        img.save('SavedTestImages/{}.jpg'.format(filename))
+
+        img_url = None
+        img_data = None
+        if request.form and request.form.get('url'):
+            img_url = request.form.get('url')
+        if request.files and 'image' in request.files:
+            img_data = request.files['image']
+        filename = save_image(img_data, img_url)
+
         img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
 
         img_arr = cv2.resize(img_arr, (30,30))
@@ -328,12 +350,17 @@ def clearblur():
     return render_template('clear_blur_index.html')
 
 
-@app.route('/clear-blur-predection', methods=['POST'])
-def clear_blur_predection():
-    filename = get_random_string()
-    img = request.files['image']
+@app.route('/clear-blur-prediction', methods=['POST'])
+def clear_blur_prediction():
 
-    img.save('SavedTestImages/{}.jpg'.format(filename))
+    img_url = None
+    img_data = None
+    if request.form and request.form.get('url'):
+        img_url = request.form.get('url')
+    if request.files and 'image' in request.files:
+        img_data = request.files['image']
+    filename = save_image(img_data, img_url)
+
     img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
 
     img_arr = cv2.resize(img_arr, (100,100))
@@ -344,7 +371,11 @@ def clear_blur_predection():
     x = round(prediction[0,0], 2)
     y = round(prediction[0,1], 2)
     preds = np.array([x,y])
-    return render_template('clear_blur_prediction.html', data=preds, fname=filename+".jpg")
+
+    if request.args.get('isJson', None):
+        return {"blur": float(preds[0]), "clear": float(preds[1])}
+    else:
+        return render_template('clear_blur_prediction.html', data=preds, fname=filename+".jpg")
 
 
 @app.route('/load_clear_blur_img')
