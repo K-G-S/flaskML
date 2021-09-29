@@ -9,18 +9,8 @@
         <center>
             <div class='cont'>
                 
+            <h2>"THIS METER IMAGE IS {{class_label}}"</h2>
             
-            {% if data[1]  > 0.50 %}
-            <h2>"THIS METER IMAGE IS SPOOF"</h2>
-
-            {% elif data[2]  > 0.50 %}
-            <h2>"THIS METER IMAGE IS NON METER"</h2>
-            
-            {%else%}
-            <h2>"THIS METER IMAGE IS REAL"</h2>
-            
-            {%endif%}
-
         </div>
             <h3>PROBABILITY SCORES :<br> REAL IMAGE: <span>{{data[0]}}</span> <br>SPOOF IMAGE: <span>{{data[1]}}</span><br>NON METER IMAGE: <span>{{data[2]}}</span><br> </h3>
             

@@ -417,8 +417,11 @@ def classify_image():
         # COUNT += 1
         return_val = {"real": 0, "spoof": 0, "nonmeter": 0}
         return_val[final_class] = 1
-        return return_val
 
+        if request.args.get('isJson', None):
+            return return_val
+        else:
+            return render_template('prediction.html', data=list(return_val.values()), class_label=final_class, fname=filename+".jpg")
 #        if preds[1] > 0.50:
  #           return 'Meter is Spoof'
   #      elif preds[2]  > 0.50:
