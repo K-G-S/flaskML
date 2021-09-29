@@ -31,21 +31,40 @@ digit_rec_values_best = load_digitrec_model()
 roi_values_light = load_roi_model(weights="yolov5/models_last/slast-roi.pt")
 digit_rec_values_light = load_digitrec_model(weights="yolov5/models_last/slast-digitrec.pt")
 
-model = Sequential()
-model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
-model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))
-model.add(MaxPool2D(pool_size=(2, 2)))
-model.add(Dropout(rate=0.5))
-model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
-model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
-model.add(MaxPool2D(pool_size=(2, 2)))
-model.add(Dropout(rate=0.5))
-model.add(Flatten())
-model.add(Dense(256, activation='relu'))
-model.add(Dense(3, activation='softmax'))
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.load_weights('static/model.h5')
 
+def get_classify_model1():
+    model = Sequential()
+    model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
+    model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.load_weights('static/model.h5')
+    return model
+
+def get_classify_model2():
+    model = Sequential()
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.load_weights('static/91acc15loss.h5')
+    return model
+
+model = get_classify_model2()
 COUNT = 0
 app = Flask(__name__)
 g_model = None
@@ -352,6 +371,10 @@ def clearblur():
 
 @app.route('/clear-blur-prediction', methods=['POST'])
 def clear_blur_prediction():
+    global f_model
+    if f_model is None:
+        f_model = load_model('static/92acc33loss.h5')
+        print("model init")
 
     img_url = None
     img_data = None
@@ -397,6 +420,4 @@ def load_img(fname):
     return send_from_directory('SavedTestImages', "{}".format(fname))
 
 if __name__ == '__main__':
-    g_model = load_model('static/Knight.h5')
-    f_model = load_model('static/92acc33loss.h5')
     app.run(host='0.0.0.0', port=80, debug=False)
