@@ -15,6 +15,7 @@ from PIL import Image
 import requests
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, MaxPool2D, BatchNormalization, Flatten
+from tensorflow.keras.preprocessing.image import img_to_array
 from PIL import Image
 import cv2
 import json
@@ -31,6 +32,14 @@ digit_rec_values_best = load_digitrec_model()
 roi_values_light = load_roi_model(weights="yolov5/models_last/slast-roi.pt")
 digit_rec_values_light = load_digitrec_model(weights="yolov5/models_last/slast-digitrec.pt")
 
+# Real/ Spoof
+ensemble_model1 = load_model('static/90acc_0.24valloss.h5')
+
+# Real/ NonMeter
+ensemble_model2 = load_model('static/91acc_0.16valloss.h5')
+
+# Real/ Spoof/ NonMeter
+ensemble_model3 = load_model('static/90acc_0.25valloss.h5')
 
 def get_classify_model1():
     model = Sequential()
@@ -64,7 +73,7 @@ def get_classify_model2():
     model.load_weights('static/91acc15loss.h5')
     return model
 
-model = get_classify_model2()
+# model = get_classify_model2()
 COUNT = 0
 app = Flask(__name__)
 g_model = None
@@ -72,9 +81,13 @@ f_model = None
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1
 
 # Classes of meters
-classes = { 0:'Real',
+cl_classes = { 0:'Real',
             1:'Spoof', 
             }
+classes = { 0:'real',
+            1:'spoof',
+            2:'nonmeter'}
+
 def load_labels(filename):
   with open(filename, 'r') as f:
     return [line.strip() for line in f.readlines()]
@@ -282,7 +295,7 @@ def home():
     img_arr = cv2.resize(img_arr, (30,30))
     img_arr = img_arr / 255.0
     img_arr = img_arr.reshape(1, 30,30,3)
-    prediction = model.predict(img_arr)
+    prediction = ensemble_model3.predict(img_arr)
 
     x = round(prediction[0,0], 2)
     y = round(prediction[0,1], 2)
@@ -308,7 +321,7 @@ def upload():
         result = image_processing(file_path)
         s = [str(i) for i in result]
         a = int("".join(s))
-        result = classes[a]
+        result = cl_classes[a]
         os.remove(file_path)
         return  {"real": float(1-a), "spoof": float(a), "nonmeter": 0}
 
@@ -322,7 +335,7 @@ def upload():
         result = image_processing(file_path)
         s = [str(i) for i in result]
         a = int("".join(s))
-        result = classes[a]
+        result = cl_classes[a]
         os.remove(file_path)
         return result
     return None
@@ -344,17 +357,67 @@ def classify_image():
 
         img_arr = cv2.imread('SavedTestImages/{}.jpg'.format(filename))
 
-        img_arr = cv2.resize(img_arr, (30,30))
-        img_arr = img_arr / 255.0
-        img_arr = img_arr.reshape(1, 30,30,3)
-        prediction = model.predict(img_arr)
+        # img_arr = cv2.resize(img_arr, (30,30))
+        # img_arr = img_arr / 255.0
+        # img_arr = img_arr.reshape(1, 30,30,3)
 
-        x = round(prediction[0,0], 2)
-        y = round(prediction[0,1], 2)
-        z = round(prediction[0,2], 2)
-        preds = np.array([x,y,z])
+        img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
+        img_arr = cv2.resize(img_arr,(128,128))
+        img_arr = img_arr.astype('float')/ 255.0
+        img_arr = img_to_array(img_arr)
+        img_arr = np.expand_dims(img_arr,axis=0)
+
+        results1 = list(ensemble_model1.predict_proba(img_arr)[0])
+        print(results1)
+
+        results2 = list(ensemble_model2.predict_proba(img_arr)[0])
+        print(results2)
+
+        results3 = list(ensemble_model3.predict_proba(img_arr)[0])
+        print(results3)
+
+        final_class = ""  # Default
+        spoof_res = ""
+        nonmeter_res = ""
+        if (np.max(results1) - np.min(results1) > 0.5): # and np.max(results1) > 0.6
+            spoof_res = classes[0] if results1[0] > results1[1] else classes[1]
+            print("res1", spoof_res)
+        if (np.max(results2) - np.min(results2) > 0.5): # and np.max(results2) > 0.6
+            nonmeter_res = classes[0] if results2[0] > results2[2] else classes[2]
+            print("res2", nonmeter_res)
+
+        results3 = [results3[0], max(results3[1], results1[1]), max(results3[2], results2[2])]
+        print(results3)
+        if spoof_res == "":
+            if nonmeter_res == "":
+                if (results3[0] > results3[1]):
+                    final_class = classes[2] if results3[2] > results3[0] else classes[0]
+                else:
+                    final_class = classes[2] if results3[2] > results3[1] else classes[1]
+                return results3
+            elif nonmeter_res == "real":
+                final_class = classes[1] if results3[1] > results3[0] else classes[0]
+            else:
+                final_class = nonmeter_res
+        elif spoof_res == "real":
+            if nonmeter_res == "":
+                final_class = classes[2] if results3[2] > results3[0] else classes[0]
+            else:
+                final_class = nonmeter_res
+        else:
+            final_class = spoof_res
+        # return final_class
+
+        # prediction = model.predict(img_arr)
+
+        # x = round(prediction[0,0], 2)
+        # y = round(prediction[0,1], 2)
+        # z = round(prediction[0,2], 2)
+        # preds = np.array([x,y,z])
         # COUNT += 1
-        return {"real": float(preds[0]), "spoof": float(preds[1]), "nonmeter": float(preds[2])}
+        return_val = {"real": 0, "spoof": 0, "nonmeter": 0}
+        return_val[final_class] = 1
+        return return_val
 
 #        if preds[1] > 0.50:
  #           return 'Meter is Spoof'
