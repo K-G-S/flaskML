@@ -5,7 +5,7 @@ import argparse
 import time
 from flask import *
 import os
-from shutil import copyfile
+from shutil import copyfile, copyfileobj
 import pandas as pd
 from werkzeug.utils import secure_filename
 import tensorflow as tf
@@ -122,9 +122,9 @@ def download_image(url):
     filename = url.split('/')[-1]
     filename = filename.replace(".jpg", "")
     if not os.path.exists(os.path.join('SavedTestImages', "{}.jpg".format(filename))):
-        img_data = requests.get(url).content
+        resp = requests.get(url, stream=True, allow_redirects=True)
         with open(os.path.join('SavedTestImages', "{}.jpg".format(filename)), 'wb') as handler:
-            handler.write(img_data)
+            copyfileobj(resp.raw, handler)
     return filename
 
 def get_random_string(N=15):
