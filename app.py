@@ -32,15 +32,6 @@ digit_rec_values_best = load_digitrec_model()
 roi_values_light = load_roi_model(weights="yolov5/models_last/slast-roi.pt")
 digit_rec_values_light = load_digitrec_model(weights="yolov5/models_last/slast-digitrec.pt")
 
-# Real/ Spoof
-ensemble_model1 = load_model('static/90acc_0.24valloss.h5')
-
-# Real/ NonMeter
-ensemble_model2 = load_model('static/91acc_0.16valloss.h5')
-
-# Real/ Spoof/ NonMeter
-ensemble_model3 = load_model('static/90acc_0.25valloss.h5')
-
 def get_classify_model1():
     model = Sequential()
     model.add(Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(30,30,3)))
@@ -72,6 +63,34 @@ def get_classify_model2():
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.load_weights('static/91acc15loss.h5')
     return model
+
+def get_classify_model3(model_path='static/rs-91acc_0.24valloss.h5'):
+    model = Sequential()
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), activation='relu', input_shape=(128,128,3)))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPool2D(pool_size=(2, 2)))
+    model.add(Dropout(rate=0.5))
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(2, activation='softmax'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.load_weights(model_path)
+    return model
+
+
+# Real/ Spoof
+ensemble_model1 = load_model('static/rs-91acc_0.24valloss.h5') #load_model('static/90acc_0.24valloss.h5')
+
+# Real/ NonMeter
+ensemble_model2 = load_model('static/95acc_0.12valloss.h5') #load_model('static/95acc_0.12valloss.h5')
+
+# Real/ Spoof/ NonMeter
+ensemble_model3 = load_model('static/90acc_0.25valloss.h5')
 
 # model = get_classify_model2()
 COUNT = 0
