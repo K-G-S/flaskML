@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+labels = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "B0", "B1", "B2", "B3", "B4", "H0", "H1", "H2", "H3", "H4", "Decimal", "KWH", "KW", "KVAH", "KVA", "PF", "CUM", "MD", "L1", "L2", "L3", "L4", "T1", "T2", "T3", "T4", "junk"]
 
 def convert_coco_to_yolo_format(filename):
     f = open(filename)
@@ -26,9 +27,12 @@ def convert_coco_to_yolo_format(filename):
                 norm_width = width / img_width
                 norm_height = height / image_height
                 label = [category["name"] for category in training_data["categories"] if category["id"] == annotation["category_id"]]
-                contents.append(label[0] + " " + str(norm_x) + " " + str(norm_y) + " " + str(norm_width) + " " + str(norm_height))
+                if label[0] not in labels:
+                    print("Found new label! Kindly add it labels sequence and run")
+                    return
+                contents.append(str(labels.index(label[0])) + " " + "%0.6f"%norm_x + " " + "%0.6f"%norm_y + " " + "%0.6f"%norm_width + " " + "%0.6f"%norm_height)
         # write to file file
-        file = open(os.path.join('SavedTestImages', "{}.txt".format(file_name)), "w")
+        file = open(os.path.join('coco_labels', "{}.txt".format(file_name)), "w")
         c = 0
         for content in contents:
             if c > 0:
@@ -46,6 +50,7 @@ if __name__ == '__main__':
                       required=True)
   args = parser.parse_args()
   filename = args.infile
+  print(labels)
   convert_coco_to_yolo_format(filename)
 
 
