@@ -298,6 +298,59 @@ def reading_value_display():
     # return render_template('reading_value_display.html', data=' '.join(new_strings), fname=filename+"_crop.jpg")
 
 
+@app.route('/get-roi', methods=['POST'])
+def get_roi():
+    p = Path().resolve() 
+    flaskML_dir = str(p)
+    filename = None
+    mtype = "best"
+    stype = "upload"
+    if request.form != None and request.form.get('mtype') in ["light", "best"]:
+        mtype = request.form.get('mtype')
+
+    if mtype == "light":
+        roi_values = roi_values_light
+        digit_rec_values = digit_rec_values_light
+    else:
+        roi_values = roi_values_best
+        digit_rec_values = digit_rec_values_best
+
+    if request.form != None and request.form.get('stype') in ["upload", "url"]:
+        stype = request.form.get('stype')
+
+    img_url = None
+    img_data = None
+    if request.form and request.form.get('url'):
+        img_url = request.form.get('url')
+    if request.files and 'image' in request.files:
+        img_data = request.files['image']
+    filename = save_image(img_data, img_url)
+
+    # one way start
+    first_model_img_path, first_model_text_path = run(classify=roi_values[0], pt=roi_values[1], onnx=roi_values[2],
+                                                stride=roi_values[3], names=roi_values[4], model=roi_values[5],
+                                                modelc=roi_values[6], session=roi_values[7], device=roi_values[8],
+                                                save_txt=True, save_conf=True, save_crop=True,
+                                                infile=os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename)))
+    print(first_model_img_path)
+    print(first_model_text_path)
+
+    cropped_filename = filename + "_crop"
+    new_strings = []
+    if os.path.isfile(first_model_img_path):
+        copyfile(first_model_img_path, os.path.join('SavedTestImages', "{}.jpg".format(cropped_filename)))
+    if os.path.isfile(first_model_text_path):
+        copyfile(first_model_text_path, os.path.join('SavedTestImages', "{}_roi.txt".format(cropped_filename)))
+
+    # if new_strings[-1] in ["kw", "kwh", "kvah", "kva", "pf"]:
+    #     parameter = new_strings[-1]
+    #     value = ''.join(new_strings[:-1])
+    if request.args.get('isJson', None):
+        return {"image": "{}.jpg".format(cropped_filename), "roi": "{}_roi.txt".format(cropped_filename)}
+    else:
+        return render_template('reading_value_display.html', mtype=mtype, fname=filename+"_crop.jpg")
+
+
 @app.route('/')
 def man():
     return render_template('index.html')

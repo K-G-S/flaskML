@@ -212,6 +212,8 @@ def run(classify, pt, onnx, stride, names, model, modelc, session, device,
     print(f'Done. ({time.time() - t0:.3f}s)')
     print(os.path.abspath(save_path))
     if s:
+        if save_crop:
+            return os.path.abspath(save_dir / 'crops' / names[c] / f'{p.stem}.jpg') if c or c==0 else os.path.abspath(save_path), os.path.abspath(txt_path + '.txt')     
         return os.path.abspath(save_path), os.path.abspath(txt_path + '.txt')
     else:
         return os.path.abspath(save_dir / 'crops' / names[c] / f'{p.stem}.jpg') if c or c==0 else os.path.abspath(save_path), None
