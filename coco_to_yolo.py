@@ -32,7 +32,7 @@ def convert_coco_to_yolo_format(filename):
                     return
                 contents.append(str(labels.index(label[0])) + " " + "%0.6f"%norm_x + " " + "%0.6f"%norm_y + " " + "%0.6f"%norm_width + " " + "%0.6f"%norm_height)
         # write to file file
-        file = open(os.path.join('coco_labels', "{}.txt".format(file_name)), "w")
+        file = open(os.path.join('yolo_labels', "{}.txt".format(file_name)), "w")
         c = 0
         for content in contents:
             if c > 0:
