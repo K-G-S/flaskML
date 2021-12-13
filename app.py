@@ -231,7 +231,7 @@ def reading_value_display():
             prediction = final_df[0]
             # strings = prediction
             for string in prediction:
-                new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf").replace("16","cum")
+                new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf").replace("16","cum").replace("17","b1")
                 new_strings.append(new_string)
             # new_strings.append(new_strings.pop(new_strings.index('kwh')))
             # print(new_strings)
@@ -242,7 +242,7 @@ def reading_value_display():
     params = []
     value = ""
     for st in new_strings:
-        if st in ["kw", "kwh", "kvah", "kva", "pf", "cum"]:
+        if st in ["kw", "kwh", "kvah", "kva", "pf", "cum", "b1"]:
             params.append(st)
         else:
             value = value + st
