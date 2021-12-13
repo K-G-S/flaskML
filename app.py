@@ -24,13 +24,14 @@ from pathlib import Path
 import random
 import string
 from yolov5.detect import run
-from yolov5.load_models import load_roi_model, load_digitrec_model
+from yolov5.load_models import pre_load_model
 
-roi_values_best = load_roi_model()
-digit_rec_values_best = load_digitrec_model()
+# stride, names, pt, jit, onnx, engine, model, device
+roi_values_best = pre_load_model()
+digit_rec_values_best = pre_load_model()
 
-roi_values_light = load_roi_model(weights="yolov5/models_last/slast-roi.pt")
-digit_rec_values_light = load_digitrec_model(weights="yolov5/models_last/slast-digitrec.pt")
+roi_values_light = pre_load_model(weights="yolov5/models_last/slast-roi.pt")
+digit_rec_values_light = pre_load_model(weights="yolov5/models_last/slast-digitrec.pt")
 
 def get_classify_model1():
     model = Sequential()
@@ -187,16 +188,15 @@ def reading_value_display():
     filename = save_image(img_data, img_url)
 
     # one way start
-    first_model_img_path, first_text_path = run(classify=roi_values[0], pt=roi_values[1], onnx=roi_values[2],
-                                                stride=roi_values[3], names=roi_values[4], model=roi_values[5],
-                                                modelc=roi_values[6], session=roi_values[7], device=roi_values[8],
-                                                save_crop=True,
-                                                infile=os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename)))
+    first_model_img_path, first_text_path = run(stride=roi_values[0], names=roi_values[1], pt=roi_values[2],
+                                                jit=roi_values[3], onnx=roi_values[4], engine=roi_values[5],
+                                                model=roi_values[6], device=roi_values[7], save_crop=True,
+                                                source=os.path.join(flaskML_dir, 'SavedTestImages/{}.jpg'.format(filename)))
 
-    img_path, text_path = run(classify=digit_rec_values[0], pt=digit_rec_values[1], onnx=digit_rec_values[2],
-                              stride=digit_rec_values[3], names=digit_rec_values[4], model=digit_rec_values[5],
-                              modelc=digit_rec_values[6], session=digit_rec_values[7], device=roi_values[8],
-                              save_txt=True, save_conf=True, infile=first_model_img_path)
+    img_path, text_path = run(stride=digit_rec_values[0], names=digit_rec_values[1], pt=digit_rec_values[2],
+                                jit=digit_rec_values[3], onnx=digit_rec_values[4], engine=digit_rec_values[5],
+                                model=digit_rec_values[6], device=digit_rec_values[7], 
+                                save_txt=True, save_conf=True, source=first_model_img_path)
 
     cropped_filename = filename + "_crop"
     new_strings = []
@@ -212,12 +212,12 @@ def reading_value_display():
             headerlist = ['a']
             dataframe.to_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)), header=headerlist, index=False)
             df = pd.read_csv(os.path.join('SavedTestImages', "{}.csv".format(cropped_filename)))
-            final_df = df.a.str.split(",",expand=True)
+            final_df = df.a.str.split(",", expand=True)
             current_max_prob_val = ''
             current_row = ''
             for index, row in final_df.iterrows():
                 print(row)
-                if int(row[0]) > 10:
+                if int(row[0]) > 10 and int(row[0]) < 16:
                     print("hi", int(row[0]) > 10)
                     if current_max_prob_val:
                         if float(current_max_prob_val) < float(row[5]):
@@ -231,7 +231,7 @@ def reading_value_display():
             prediction = final_df[0]
             # strings = prediction
             for string in prediction:
-                new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf")
+                new_string = string.replace("10", ".").replace("11","kwh").replace("12","kw").replace("13","kvah").replace("14","kva").replace("15","pf").replace("16","cum")
                 new_strings.append(new_string)
             # new_strings.append(new_strings.pop(new_strings.index('kwh')))
             # print(new_strings)
@@ -242,7 +242,7 @@ def reading_value_display():
     params = []
     value = ""
     for st in new_strings:
-        if st in ["kw", "kwh", "kvah", "kva", "pf"]:
+        if st in ["kw", "kwh", "kvah", "kva", "pf", "cum"]:
             params.append(st)
         else:
             value = value + st
@@ -558,4 +558,4 @@ def load_img(fname):
     return send_from_directory('SavedTestImages', "{}".format(fname))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
